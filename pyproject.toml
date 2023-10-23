@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "poetry"
+version = "0.1.0"
+description = ""
+authors = ["Cadi7 <finicacr7@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Django = "^4.1.2"
+djangorestframework-simplejwt = "^5.2.1"
+drf-yasg = "^1.21.4"
+drf-util = "^1.0.17"
+django-environ = "^0.9.0"
+psycopg2-binary = "^2.9.4"
+celery = {extras = ["redis"], version = "^5.2.7"}
+croniter = "^1.3.7"
+selenium = "^4.5.0"
+pillow = "^9.3.0"
+cloudinary = "^1.30.0"
+typing-extensions = "^4.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+
+
+

@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenium-hub
+  labels:
+    app: selenium-hub
+    name: selenium-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selenium-hub
+  template:
+    metadata:
+      labels:
+        app: selenium-hub
+    spec:
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      containers:
+      - name: selenium-hub
+        image: selenium/hub:4.0
+        ports:
+          - containerPort: 4444
+          - containerPort: 4443
+          - containerPort: 4442
+        resources:
+          limits:
+            memory: "1000Mi"
+            cpu: ".5"
+        livenessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /wd/hub/status
+            port: 4444
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+      - name: selenium-chrome
+        image: selenium/node-chrome:4.0
+        ports:
+          - containerPort: 5555
+        volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
+        env:
+          - name: SE_EVENT_BUS_HOST
+            value: "localhost"
+          - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+            value: "4443"
+          - name: SE_EVENT_BUS_PUBLISH_PORT
+            value: "4442"
+          - name: SE_NODE_MAX_INSTANCES
+            value: "10"
+          - name: SE_NODE_MAX_SESSIONS
+            value: "10"
+          - name: SE_NODE_SESSION_TIMEOUT
+            value: "45"
+          - name: SE_NODE_OVERRIDE_MAX_SESSIONS
+            value: "true"
+            # set headles to true
+          - name: SE_NODE_CHROME_OPTS
+
+        resources:
+          limits:
+            memory: "1000Mi"
+            cpu: ".5"
+      - name: selenium-firefox
+        image: selenium/node-firefox:4.0
+        ports:
+          - containerPort: 5557
+        volumeMounts:
+          - mountPath: /dev/shm
+            name: dshm
+        env:
+          - name: SE_EVENT_BUS_HOST
+            value: "localhost"
+          - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+            value: "4443"
+          - name: SE_EVENT_BUS_PUBLISH_PORT
+            value: "4442"
+          - name: SE_NODE_MAX_INSTANCES
+            value: "10"
+          - name: SE_NODE_MAX_SESSIONS
+            value: "10"
+          - name: SE_NODE_SESSION_TIMEOUT
+            value: "45"
+          - name: SE_NODE_OVERRIDE_MAX_SESSIONS
+            value: "true"
+          - name: PORT
+            value: "5557"
+          - name: SE_OPTS
+            value: "--port 5557"
+        resources:
+          limits:
+            memory: "1000Mi"
+            cpu: ".5"

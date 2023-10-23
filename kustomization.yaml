@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:  ## All bases k8s objects (deployment, service and ingress).
+  - k8s-deployment/deployment/ #works
+  - k8s-deployment/service/ #works
+  - k8s-deployment/ingress/ #works
+  - k8s-deployment/deployment/alternative_deployment_1/
+  - k8s-deployment/deployment/alternative_deployment_2/
+  - docker/k8s/selenium-hub/
+  - docker/k8s/selenium-hub/service/
+  - docker/k8s/selenium-hub/ingress/
+
+
+
+patchesStrategicMerge:  ## Additional kubernetes deployment objects patches (object specifications), all of them are merging into one deployment file.
+  - k8s-deployment/overlays/security/secret-image-repository.yml
+  - k8s-deployment/overlays/security/ebs-platform-secret-image-repository.yml
+  - k8s-deployment/overlays/alternative_deployment_1/app-env-variables-file.yml
+  - k8s-deployment/overlays/alternative_deployment_2/app-env-variables-file.yml
+  - k8s-deployment/overlays/alternative_deployment_1/deployment-command.yml
+  - k8s-deployment/overlays/alternative_deployment_2/deployment-command.yml
+  # - k8s-deployment/overlays/ingress-controller/ingress-annotations-custom-timeout.yml
+  # - k8s-deployment/overlays/ingress-controller/ingress-client-max-mody-size.yml
+
+
+### ConfigMap works
+
+configMapGenerator:   ## Environments
+  - name: ${PROJECT_NAME}-app-env-variables-file
+    env: ./.env_vars
+  - name: ${PROJECT_NAME}-${K8S_ALTERNATIVE_DEPLOYMENT_1_NAME}-app-env-variables-file
+    env: ./.env_vars # Containers environment variables is created by deploy.sh, must to be. All APP_* from .env file.
+  - name: ${PROJECT_NAME}-${K8S_ALTERNATIVE_DEPLOYMENT_2_NAME}-app-env-variables-file
+    env: ./.env_vars # Containers environment variables is created by deploy.sh, must to be. All APP_* from .env file.
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    environment: ${K8S_ENV}
+  annotations:
+    note: configmap-generated

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: selenium-hub
+  namespace: ${K8S_APP_NAMESPACE}
+  labels:
+    app: selenium-hub
+    name: selenium-hub
+spec:
+  ports:
+  - name: "selenium-hub"
+    port: 80
+    targetPort: 4444
+  - name: "subscribe-events"
+    port: 4443
+    targetPort: 4443
+  - name: "publish-events"
+    port: 4442
+    targetPort: 4442
+  selector:
+    app: selenium-hub
+#  type: ClusterIP
+#  sessionAffinity: None

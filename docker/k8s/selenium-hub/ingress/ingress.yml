@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: selenium-ingress
+  namespace: ${K8S_APP_NAMESPACE}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: selenium-hub.k8s.devebs.net
+    http:
+      paths:
+      - backend:
+          serviceName: ${PROJECT_NAME}-selenium-hub
+          servicePort: 80
+#      - backend:
+#          serviceName: ${PROJECT_NAME}-selenium-service
+#          servicePort: 8001
+#      - backend:
+#          serviceName: ${PROJECT_NAME}-selenium-service
+#          servicePort: 8002

@@ -1,0 +1,76 @@
+version: "3"
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --appendonly yes
+
+  worker:
+      build:
+        dockerfile: Dockerfile
+        context: ./
+      container_name: worker
+      ports:
+        - "5000:5000"
+      command: celery -A celeryconfig worker -l info --loglevel INFO
+      env_file:
+        - .env
+      depends_on:
+        - redis
+        - db
+
+  beat:
+      build:
+        dockerfile: Dockerfile
+        context: ./
+
+      container_name: beat
+      ports:
+        - "5001:5001"
+      command: celery -A celeryconfig beat -l info
+      env_file:
+        - .env
+      depends_on:
+        - redis
+        - db
+
+  chrome:
+      image: selenium/node-chrome:latest
+      shm_size: 2gb
+      depends_on:
+        - selenium-hub
+      ports:
+        - "4444:4444"
+      environment:
+        - SE_EVENT_BUS_HOST=selenium-hub
+        - SE_EVENT_BUS_PUBLISH_PORT=4442
+        - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+        - SE_NODE_MAX_INSTANCES=10
+        - SE_NODE_MAX_SESSIONS=10
+        - SE_NODE_SESSION_TIMEOUT=10
+
+  firefox:
+      image: selenium/node-firefox:latest
+      shm_size: 2gb
+      depends_on:
+        - selenium-hub
+      ports:
+          - "4444:4444"
+      environment:
+        - SE_EVENT_BUS_HOST=selenium-hub
+        - SE_EVENT_BUS_PUBLISH_PORT=4442
+        - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+        - SE_NODE_MAX_INSTANCES=10
+        - SE_NODE_MAX_SESSIONS=10
+        - SE_NODE_SESSION_TIMEOUT=10
+
+
+  selenium-hub:
+      image: selenium/hub:latest
+      container_name: selenium-hub
+      ports:
+        - "4444:4444"

@@ -1,0 +1,73 @@
+---
+stages:
+  - build
+  - deploy
+
+services:
+  - docker:dind
+
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+  DOCKER_REPO_IMAGE: "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_NAME"
+  DOCKER_REPOSITORY: "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_NAME"
+  DOCKER_IMAGE_TAG: "${VersMajor}.${VersMinor}.${CI_PIPELINE_IID}-$CI_COMMIT_REF_NAME"
+  K8S_DOCKER_TAG: "${VersMajor}.${VersMinor}.${CI_PIPELINE_IID}-$CI_COMMIT_REF_NAME"
+
+image:
+  name: gitlab.devebs.net:4567/templates/images/devspace_5_18_5:5.0
+
+before_script:
+  - echo "  === Sync Git Module - K8S-Deployment ===  "
+  - git submodule deinit --all -f
+  - git submodule sync
+  - git submodule update --init
+  - git submodule add -b production_v1 --force ../../ebs-iaas/k8s-deployment.git
+  - git submodule sync && git submodule update --recursive --remote -f &&  ls k8s*
+
+
+
+#------- NonProdcution Jobs -------------------------------------------
+build:
+  stage: build
+  environment: development
+  variables:
+    DOCKER_IMAGE_TAG: "${VersMajor}.${VersMinor}.${CI_PIPELINE_IID}-$CI_COMMIT_REF_NAME"
+    K8S_DOCKER_TAG: "${VersMajor}.${VersMinor}.${CI_PIPELINE_IID}-$CI_COMMIT_REF_NAME"
+  only:
+    refs:
+      - main
+  tags:
+    - ebs
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - echo "  === $CI_PROJECT_NAME - Start Build Dockerfile ===  "
+    - cat "${envVars}" | envsubst > .env
+    - devspace run build
+    - echo "  === $CI_PROJECT_NAME - End Build Dockerfile ===  "
+
+
+deploy_dev_k8s:
+  stage: deploy
+  environment: development
+  variables:
+    DOCKER_IMAGE_TAG: "${VersMajor}.${VersMinor}.${CI_PIPELINE_IID}-$CI_COMMIT_REF_NAME"
+    K8S_DOCKER_TAG: "${VersMajor}.${VersMinor}.${CI_PIPELINE_IID}-$CI_COMMIT_REF_NAME"
+  dependencies: [build]
+  only:
+    refs:
+      - main
+  tags:
+    - ebs
+  script:
+    - pwd
+    - devspace -v
+    - echo "  === $CI_PROJECT_NAME - Start Deployment ===  "
+    - cat "${envVars}" | envsubst > .env
+    - devspace run deployment
+    - devspace run check-deployment
+
+
+
+
